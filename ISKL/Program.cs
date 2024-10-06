@@ -1,11 +1,9 @@
-﻿using static System.Runtime.InteropServices.JavaScript.JSType;
-
-namespace ISKL
+﻿namespace ISKL
 {
     class RootExeption : Exception
     {
         public RootExeption(Severity severity):base() {}
-    }
+    }    
     enum Severity
     {
         Warning,
@@ -63,15 +61,13 @@ namespace ISKL
                             }
                             break;
                     }
-                }
+                }                
                 catch (FormatException ex)
                 {
                     Console.SetCursorPosition(0, 5);
                     Console.WriteLine("--------------------------------------------------");
                     FormatData(ex.Message,Severity.Error);
-                    Console.ReadLine();
-                    ResetProgram();
-                    ClearScreen();
+                    Console.ReadLine();                    
                 }
 
                 catch (RootExeption)
@@ -84,6 +80,10 @@ namespace ISKL
                     Console.ReadLine();
                     ResetProgram();
                     ClearScreen();
+                }
+                catch (OverflowException)
+                {
+                    HandleOverflow();
                 }
             }
         }                
@@ -152,21 +152,24 @@ namespace ISKL
         static void GettingValue(string variableName, out int value, int selectedIndex)
         {
             string input = Console.ReadLine();
-            equation = equation.Replace(variableName, input);
-            value = ParseInteger(input, variableName);
-            menuOptions[selectedIndex] = $"{variableName} : " + value;           
-        }
-        
-        static int ParseInteger(string input, string variableName)
-        {
-            if (!int.TryParse(input, out int result))
+
+            if (!long.TryParse(input, out long longValue))
             {
-                throw new FormatException("-----------------------------\r\n" +
-                                         $"|Неверный формат параметра {variableName}|\r\n" +
-                                          "-----------------------------");
+                throw new FormatException($"Неверный формат параметра {variableName}.");
             }
-            return result;
-        }
+
+            if (longValue < int.MinValue || longValue > int.MaxValue)
+            {
+                throw new OverflowException();
+            }
+
+            equation = equation.Replace(variableName, input);
+
+            value = (int)longValue;
+
+            menuOptions[selectedIndex] = $"{variableName} : " + value;
+        }        
+        
         static void FormatData(string message,Severity severity)
         {
             Console.ForegroundColor = ConsoleColor.White;
@@ -174,6 +177,19 @@ namespace ISKL
 
             Console.WriteLine($"{message}");
             Console.ResetColor();
+        }
+        static void HandleOverflow()
+        {
+            string message = "--------------------------------------------------\r\n" +
+                             "| Значение выходит за пределы типа int.         |\r\n" +
+                             "| Допустимые значения: от " + int.MinValue + " до " + int.MaxValue + ". |\r\n" +
+                             "--------------------------------------------------";
+
+            Console.ForegroundColor = ConsoleColor.Black;
+            Console.BackgroundColor = ConsoleColor.Green;
+            Console.WriteLine(message);
+            Console.ReadLine();                        
+            ShowMainMenu(0);
         }
     }
 }
